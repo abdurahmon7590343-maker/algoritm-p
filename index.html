@@ -1,1133 +1,473 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GOST 19.701-90: 13-Masalalar va AI Generator (Ikki yonli Romb)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f1f5f9;
-      color: #0f172a;
-    }
-    /* Katakli daftar foni (1 katak = 20px) */
-    .notebook-grid {
-      background-color: #ffffff;
-      background-image:
-        linear-gradient(to right, rgba(59, 130, 246, 0.18) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(59, 130, 246, 0.18) 1px, transparent 1px),
-        linear-gradient(to right, rgba(59, 130, 246, 0.34) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(59, 130, 246, 0.34) 1px, transparent 1px);
-      background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
-      position: relative;
-    }
-    .notebook-grid::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 34px;
-      width: 2px;
-      background-color: rgba(239, 68, 68, 0.55);
-      pointer-events: none;
-    }
-    .plain-bg {
-      background-color: #ffffff;
-    }
-    /* Ko'k ruchka (Daftarda qo'lda chizilgan) vs Kitobiy qora uslub */
-    .pen-mode svg .shape {
-      fill: rgba(255, 255, 255, 0.92) !important;
-      stroke: #1d4ed8 !important;
-      stroke-width: 2.3px !important;
-    }
-    .pen-mode svg .line {
-      stroke: #1d4ed8 !important;
-      stroke-width: 2.1px !important;
-    }
-    .pen-mode svg text {
-      fill: #1e3a8a !important;
-      font-family: 'Caveat', cursive !important;
-      font-size: 19px !important;
-      font-weight: 700 !important;
-    }
-    .pen-mode svg .branch-lbl {
-      fill: #b91c1c !important;
-      font-size: 17px !important;
-      font-weight: 700 !important;
-    }
-    .pen-mode svg marker path {
-      fill: #1d4ed8 !important;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daftardagi Flowgorithm — V Bob</title>
+    <script src="[https://telegram.org/js/telegram-web-app.js](https://telegram.org/js/telegram-web-app.js)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js](https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js)"></script>
+    <link href="[https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap](https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap)" rel="stylesheet">
+    <style>
+        :root {
+            --ink-blue: #1a3b8b;
+            --ink-red: #c92a2a;
+            --ink-green: #2b8a3e;
+            --grid-line: #d0e3f0;
+            --paper-bg: #fdfdf8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .toolbar {
+            background: #0f172a;
+            padding: 8px 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        select, button, input {
+            background: #1e293b;
+            color: #fff;
+            border: 1px solid #475569;
+            padding: 6px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        button { cursor: pointer; font-weight: 600; }
+        button.primary { background: #2563eb; border-color: #3b82f6; }
+        button.success { background: #16a34a; border-color: #22c55e; }
+        button.warning { background: #d97706; border-color: #f59e0b; }
+        button.ai-btn { background: #7c3aed; border-color: #8b5cf6; }
 
-    .gost-mode svg .shape {
-      fill: #ffffff;
-      stroke: #0f172a;
-      stroke-width: 2px;
-    }
-    .gost-mode svg .line {
-      stroke: #0f172a;
-      stroke-width: 2px;
-    }
-    .gost-mode svg text {
-      fill: #0f172a;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .gost-mode svg .branch-lbl {
-      font-family: 'Inter', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      fill: #0f172a;
-    }
+        .problem-box {
+            background: #1e293b;
+            padding: 7px 12px;
+            font-size: 12.5px;
+            color: #cbd5e1;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .problem-box input {
+            flex: 1;
+            background: #0f172a;
+        }
 
-    .tab-active {
-      background-color: #1d4ed8 !important;
-      color: #ffffff !important;
-      box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.25);
-    }
-    @media print {
-      .no-print {
-        display: none !important;
-      }
-      .print-break {
-        page-break-after: always;
-      }
-      body {
-        background-color: #ffffff;
-      }
-    }
-  </style>
+        .notebook-wrapper {
+            flex: 1;
+            overflow: auto;
+            background-color: var(--paper-bg);
+            background-image: 
+                linear-gradient(90deg, transparent 39px, #f08080 39px, #f08080 41px, transparent 41px),
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+            background-attachment: local;
+        }
+        canvas { display: block; margin: 0 auto; }
+
+        .debug-panel {
+            background: #0f172a;
+            border-top: 2px solid #334155;
+            height: 135px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+        }
+        .debug-col { padding: 6px 10px; overflow-y: auto; border-right: 1px solid #334155; }
+        .debug-title { font-size: 10.5px; color: #94a3b8; margin-bottom: 4px; font-weight: bold; display: flex; justify-content: space-between; }
+        .var-table { width: 100%; border-collapse: collapse; }
+        .var-table td { padding: 2px 4px; border-bottom: 1px solid #1e293b; }
+        .var-name { color: #38bdf8; }
+        .var-val { color: #fde047; text-align: right; }
+        .console-out { color: #4ade80; white-space: pre-wrap; }
+    </style>
 </head>
-<body class="min-h-screen flex flex-col pen-mode" id="appBody">
+<body>
 
-  <!-- Yuqori boshqaruv paneli -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
-    <div class="max-w-6xl mx-auto px-4 py-3">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-emerald-600 text-white text-xs font-bold tracking-wide">GOST 19.701-90</span>
-            <h1 class="text-base md:text-lg font-bold text-slate-900">
-              V bob. Blok-Sxemalar Mini App (Romb: 2 yondan • Kiritish: Parallelogramm • Chop etish: Kesik burchak)
-            </h1>
-          </div>
-          <p class="text-xs text-slate-500 mt-0.5">
-            Har bir rombdan chiziqlar faqat <b>chap («Yoʻq / -»)</b> va <b>oʻng («Ha / +»)</b> uchlardan chiqadi — pastki uchidan hech qachon chiziq chiqmaydi!
-          </p>
+<div class="toolbar">
+    <select id="sectionSelect" onchange="onSectionChange()">
+        <option value="5.1">§-5.1. Butun sonlar (1-32)</option>
+        <option value="5.2">§-5.2. Sanoq sistemasi (1-32)</option>
+        <option value="5.3">§-5.3. Geometriya (1-30)</option>
+        <option value="5.4">§-5.4. Tartiblash (1-26)</option>
+        <option value="5.5">§-5.5. Ko'phadlar (1-16)</option>
+        <option value="5.6">§-5.6. Matritsalar (1-29)</option>
+        <option value="5.7">§-5.7. Matritsa algebrasi (1-21)</option>
+    </select>
+
+    <select id="problemSelect" onchange="fetchFlowchart()"></select>
+
+    <button class="ai-btn" onclick="fetchFlowchart()">✨ Chizish</button>
+    <button class="success" onclick="runSimulation()">▶️ Run</button>
+    <button class="primary" onclick="downloadNotebookPNG()">📥 PNG</button>
+    <button class="warning" onclick="downloadFPRG()">⚙️ .fprg</button>
+</div>
+
+<div class="problem-box">
+    <span id="statusBadge">📘</span>
+    <input type="text" id="customPrompt" placeholder="Masala sharti (yoki o'zingiz xohlagan masala shartini yozib '✨ Chizish'ni bosing)...">
+</div>
+
+<div class="notebook-wrapper">
+    <canvas id="flowCanvas" width="920" height="1100"></canvas>
+</div>
+
+<div class="debug-panel">
+    <div class="debug-col">
+        <div class="debug-title">
+            <span>🔍 O'zgaruvchilar (Watch)</span>
+            <span id="stepCounter">Qadam: 0</span>
         </div>
-
-        <!-- Rejim tugmalari -->
-        <div class="flex flex-wrap items-center gap-2">
-          <button onclick="togglePrintShape()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 hover:bg-amber-400 transition shadow-sm">
-            <span>📄</span>
-            <span id="printShapeText">Chop etish: Burchagi kesik</span>
-          </button>
-
-          <button onclick="togglePenMode()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
-            <span>✒️</span>
-            <span id="penBtnText">Koʻk ruchka (Qoʻlyozma)</span>
-          </button>
-
-          <button onclick="toggleGrid()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition">
-            <span>📏</span>
-            <span id="gridBtnText">Katakli fon: Yoqilgan</span>
-          </button>
-
-          <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-white hover:bg-slate-700 transition">
-            <span>🖨️</span> PDF / Print
-          </button>
-        </div>
-      </div>
-
-      <!-- Masalalar menyusi -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pt-3 pb-1" id="tabContainer">
-        <button onclick="selectTab('all')" id="tab-all" class="tab-btn tab-active px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition">
-          📋 13-masalalar (1–7)
-        </button>
-        <button onclick="selectTab(0)" id="tab-0" class="tab-btn bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition">
-          1) §-5.1 Kasrlar
-        </button>
-        <button onclick="selectTab(1)" id="tab-1" class="tab-btn bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition">
-          2) §-5.2 (0 va 7)
-        </button>
-        <button onclick="selectTab(2)" id="tab-2" class="tab-btn bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition">
-          3) §-5.3 Geometriya
-        </button>
-        <button onclick="selectTab(3)" id="tab-3" class="tab-btn bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition">
-          4) §-5.4 Birlashtirish
-        </button>
-        <button onclick="selectTab(4)" id="tab-4" class="tab-btn bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition">
-          5) §-5.5 Koʻphadlar
-        </button>
-        <button onclick="selectTab(5)" id="tab-5" class="tab-btn bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition">
-          6) §-5.6 Matrisa (max)
-        </button>
-        <button onclick="selectTab(6)" id="tab-6" class="tab-btn bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition">
-          7) §-5.7 A¹⁵ daraja
-        </button>
-        <button onclick="selectTab('ai')" id="tab-ai" class="tab-btn bg-emerald-600 text-white hover:bg-emerald-700 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shadow-sm">
-          🤖 Kitobdagi 179 ta masala (AI Generator)
-        </button>
-      </div>
+        <table class="var-table" id="varTable"></table>
     </div>
-  </header>
-
-  <!-- QOIDALAR ESLATMASI (VIZUAL KO'RSATMA) -->
-  <section class="max-w-6xl mx-auto w-full px-4 pt-4 no-print">
-    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-      <div class="flex items-center gap-3 bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
-        <svg viewBox="0 0 90 50" class="w-16 h-10 shrink-0">
-          <polygon points="20,10 80,10 68,40 8,40" fill="#fff" stroke="#1d4ed8" stroke-width="2"/>
-          <text x="44" y="29" text-anchor="middle" font-size="11" fill="#1e3a8a" font-weight="bold">n, A</text>
-        </svg>
-        <div>
-          <p class="font-bold text-slate-900">1. Kiritish (Parallelogramm)</p>
-          <p class="text-slate-600">Har doim «Boshlash»dan keyin oʻzgaruvchilar kiritiladi.</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200">
-        <svg viewBox="0 0 90 50" class="w-16 h-10 shrink-0">
-          <polygon points="10,8 80,8 80,30 66,42 10,42" fill="#fff" stroke="#1d4ed8" stroke-width="2"/>
-          <text x="44" y="28" text-anchor="middle" font-size="11" fill="#1e3a8a" font-weight="bold">S, B</text>
-        </svg>
-        <div>
-          <p class="font-bold text-slate-900">2. Chop etish (Kesik burchak)</p>
-          <p class="text-slate-600">Natija parallelogrammda emas, burchagi kesik toʻrtburchakda!</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 bg-rose-50/70 p-2.5 rounded-xl border border-rose-200">
-        <svg viewBox="0 0 110 55" class="w-20 h-11 shrink-0">
-          <polygon points="55,8 85,26 55,44 25,26" fill="#fff" stroke="#1d4ed8" stroke-width="2"/>
-          <polyline points="25,26 8,26 8,48" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-          <polyline points="85,26 102,26 102,48" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-          <text x="14" y="21" font-size="9" fill="#b91c1c" font-weight="bold">Yoʻq</text>
-          <text x="88" y="21" font-size="9" fill="#b91c1c" font-weight="bold">Ha</text>
-        </svg>
-        <div>
-          <p class="font-bold text-slate-900">3. Romb: Faqat 2 yondan!</p>
-          <p class="text-slate-600">Chapdan <b>«Yoʻq»</b>, oʻngdan <b>«Ha»</b> chiqadi. Pastki uch boʻsh qoladi!</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200">
-        <svg viewBox="0 0 110 55" class="w-20 h-11 shrink-0">
-          <polygon points="28,12 82,12 94,26 82,40 28,40 16,26" fill="#fff" stroke="#1d4ed8" stroke-width="2"/>
-          <line x1="55" y1="40" x2="55" y2="52" stroke="#1d4ed8" stroke-width="2"/>
-          <polyline points="8,50 8,26 16,26" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-          <polyline points="94,26 105,26 105,50" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-        </svg>
-        <div>
-          <p class="font-bold text-slate-900">4. Sikl (Oltiburchak)</p>
-          <p class="text-slate-600">Chap uchidan qaytib kiradi, oʻng uchidan sikldan chiqib ketadi.</p>
-        </div>
-      </div>
+    <div class="debug-col">
+        <div class="debug-title">💻 Konsol (Output)</div>
+        <div class="console-out" id="consoleOut">Tayyor. "▶️ Run" tugmasini bosing.</div>
     </div>
-  </section>
+</div>
 
-  <!-- ==================== AI GENERATOR MINI APP BO'LIMI ==================== -->
-  <section id="aiGeneratorSection" class="max-w-6xl mx-auto w-full px-4 py-5 hidden">
-    <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden">
-      <div class="bg-emerald-900 text-white px-5 py-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Interaktiv Mini App • V bob (114–135-betlar)</span>
-          <h2 class="text-lg font-bold">Kitobdagi barcha 179 ta masala uchun Avtomatik Blok-Sxema Chizuvchi</h2>
-        </div>
-        <button onclick="downloadCurrentSvg('aiSvgContainer', 'gost_blok_sxema.png')" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow">
-          📥 PNG Rasm qilib yuklab olish
-        </button>
-      </div>
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) tg.expand();
 
-      <div class="p-5 grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <!-- Chap panel: Masala tanlash -->
-        <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">1. Paragrafni tanlang:</label>
-            <select id="secSelect" onchange="updateProblemSelect()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold bg-white">
-              <option value="5.1">§-5.1. Butun sonli masalalar (1–32)</option>
-              <option value="5.2">§-5.2. Sanoq sistemalari (1–32)</option>
-              <option value="5.3">§-5.3. Geometriya (1–30)</option>
-              <option value="5.4">§-5.4. Massivlarni tartiblash (1–26)</option>
-              <option value="5.5">§-5.5. Koʻphadlar bilan ishlash (1–16)</option>
-              <option value="5.6">§-5.6. Matrisalarni tuzish va almashtirish (1–29)</option>
-              <option value="5.7">§-5.7. Matrisalar algebrasi (1–21)</option>
-            </select>
-          </div>
+let SECTIONS_META = {};
+let currentProblem = null;
+let activeNodeId = null;
+let simTimer = null;
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">2. Masala raqamini tanlang:</label>
-            <select id="probSelect" onchange="loadPresetProblem()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold bg-white"></select>
-          </div>
+async function initApp() {
+    try {
+        const res = await fetch("/api/sections");
+        SECTIONS_META = await res.json();
+    } catch (e) {
+        SECTIONS_META = { "5.1": { count: 32, problems: {} } };
+    }
+    onSectionChange();
+}
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">3. Masala sharti (tahrirlash yoki yangi yozish mumkin):</label>
-            <textarea id="customProblemInput" rows="4" class="w-full rounded-lg border border-slate-300 p-2.5 text-xs bg-white" placeholder="Kitobdan istalgan masala shartini shu yerga yozing..."></textarea>
-          </div>
+function onSectionChange() {
+    const sec = document.getElementById("sectionSelect").value;
+    const probSelect = document.getElementById("problemSelect");
+    probSelect.innerHTML = "";
+    const count = SECTIONS_META[sec]?.count || 32;
+    const knownProbs = SECTIONS_META[sec]?.problems || {};
 
-          <button id="generateBtn" onclick="generateAiFlowchart()" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow flex items-center justify-center gap-2">
-            <span>✨</span> Blok-sxemani daftarga chizish
-          </button>
+    for (let i = 1; i <= count; i++) {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        const shortDesc = knownProbs[String(i)] ? ` — ${knownProbs[String(i)].slice(0, 38)}...` : "";
+        opt.textContent = `${i}-masala${shortDesc}`;
+        probSelect.appendChild(opt);
+    }
+    fetchFlowchart();
+}
 
-          <div id="aiDefenseBox" class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-slate-800 space-y-1">
-            <p class="font-bold text-amber-900">🎓 Ustoz soʻrasa (Ogʻzaki himoya):</p>
-            <p id="aiDefenseText">Masalani tanlab «Blok-sxemani daftarga chizish» tugmasini bosing.</p>
-          </div>
-        </div>
-
-        <!-- O'ng panel: Daftar varag'i -->
-        <div class="lg:col-span-2 flex flex-col">
-          <div id="aiSvgContainer" class="sheet-area notebook-grid rounded-xl border border-slate-300 p-4 min-h-[560px] flex items-center justify-center overflow-x-auto">
-            <p class="text-slate-400 text-sm">Shu yerda katakli daftarga chizilgan blok-sxema paydo boʻladi...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== ASOSIY 7 TA 13-MASALALAR KONTEYNERI ==================== -->
-  <main class="max-w-6xl mx-auto w-full px-4 py-5 flex-1 space-y-8" id="cardsContainer">
-    <!-- Kartochkalar JS orqali 100% aniq ikki yonli romb va kesik burchakli chop etish bloki bilan chiziladi -->
-  </main>
-
-  <script>
-    let isGridOn = true;
-    let isPenMode = true;
-    let useCutCornerPrint = true; // true = Burchagi kesik to'rtburchak, false = To'lqinsimon hujjat
-
-    // ==================== SVG SHAKLLAR CHIZUVCHI YORDAMCHI FUNKSIYALAR ====================
-    function createSvgHeader(w, h, markerId) {
-      return `<svg viewBox="0 0 ${w} ${h}" class="w-full max-w-[720px] h-auto select-none">
-        <defs>
-          <marker id="${markerId}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f172a"/>
-          </marker>
-        </defs>`;
+async function fetchFlowchart() {
+    const sec = document.getElementById("sectionSelect").value;
+    const num = document.getElementById("problemSelect").value;
+    const knownDesc = SECTIONS_META[sec]?.problems?.[num] || "";
+    const inputEl = document.getElementById("customPrompt");
+    
+    if (knownDesc && !inputEl.dataset.edited) {
+        inputEl.value = knownDesc;
     }
 
-    // 1. Oval (Boshlash / Tamom)
-    function drawOval(cx, y, w, h, text) {
-      const rx = h / 2;
-      return `<rect class="shape" x="${cx - w/2}" y="${y}" width="${w}" height="${h}" rx="${rx}"/>
-              <text x="${cx}" y="${y + h/2 + 5}" text-anchor="middle">${text}</text>`;
-    }
+    document.getElementById("statusBadge").textContent = "⏳";
+    document.getElementById("consoleOut").textContent = "Blok-sxema daftarga chizilmoqda...";
 
-    // 2. Parallelogramm (FAQAT Kiritish uchun!)
-    function drawInputParallelogram(cx, y, w, h, text) {
-      const sl = 16;
-      const pts = `${cx - w/2 + sl},${y} ${cx + w/2 + sl},${y} ${cx + w/2 - sl},${y + h} ${cx - w/2 - sl},${y + h}`;
-      return `<polygon class="shape" points="${pts}"/>
-              <text x="${cx}" y="${y + h/2 + 5}" text-anchor="middle">${text}</text>`;
-    }
-
-    // 3. Chop etish bloki (Burchagi kesik to'rtburchak YOKI To'lqinsimon hujjat)
-    function drawPrintBlock(cx, y, w, h, text) {
-      const x1 = cx - w/2, x2 = cx + w/2, y1 = y, y2 = y + h;
-      const cut = 15;
-      let shapeSvg = '';
-      if (useCutCornerPrint) {
-        // O'ng-pastki burchagi qiyshiq kesilgan to'rtburchak
-        const pts = `${x1},${y1} ${x2},${y1} ${x2},${y2 - cut} ${x2 - cut},${y2} ${x1},${y2}`;
-        shapeSvg = `<polygon class="shape" points="${pts}"/>`;
-      } else {
-        // GOST Hujjat (pastki qismi to'lqinsimon)
-        const d = `M ${x1} ${y1} H ${x2} V ${y2 - 6} Q ${cx + w/4} ${y2 - 15} ${cx} ${y2 - 6} T ${x1} ${y2 - 6} Z`;
-        shapeSvg = `<path class="shape" d="${d}"/>`;
-      }
-      return `${shapeSvg}<text x="${cx}" y="${y + h/2 + 4}" text-anchor="middle">${text}</text>`;
-    }
-
-    // 4. To'g'ri to'rtburchak (Hisoblash bloki - 1, 2 yoki 3 qatorli)
-    function drawRect(cx, y, w, h, lines) {
-      const arr = Array.isArray(lines) ? lines : [lines];
-      let svg = `<rect class="shape" x="${cx - w/2}" y="${y}" width="${w}" height="${h}"/>`;
-      const step = 20;
-      const startY = y + (h - (arr.length - 1) * step) / 2 + 5;
-      arr.forEach((ln, idx) => {
-        svg += `<text x="${cx}" y="${startY + idx * step}" text-anchor="middle">${ln}</text>`;
-      });
-      return svg;
-    }
-
-    // 5. Oltiburchak (Sikl / Modifikatsiya bloki)
-    function drawHexagon(cx, y, w, h, text) {
-      const tip = 18;
-      const pts = `${cx - w/2 + tip},${y} ${cx + w/2 - tip},${y} ${cx + w/2},${y + h/2} ${cx + w/2 - tip},${y + h} ${cx - w/2 + tip},${y + h} ${cx - w/2},${y + h/2}`;
-      return `<polygon class="shape" points="${pts}"/>
-              <text x="${cx}" y="${y + h/2 + 5}" text-anchor="middle">${text}</text>`;
-    }
-
-    // 6. Romb (Shart bloki — chiziqlar FAQAT 2 YONDAN chiqadi!)
-    function drawDiamond(cx, y, w, h, text, leftLabel = "Yoʻq", rightLabel = "Ha") {
-      const cy = y + h / 2;
-      const pts = `${cx},${y} ${cx + w/2},${cy} ${cx},${y + h} ${cx - w/2},${cy}`;
-      return `<polygon class="shape" points="${pts}"/>
-              <text x="${cx}" y="${cy + 5}" text-anchor="middle">${text}</text>
-              <text class="branch-lbl" x="${cx - w/2 - 8}" y="${cy - 7}" text-anchor="end">${leftLabel}</text>
-              <text class="branch-lbl" x="${cx + w/2 + 8}" y="${cy - 7}" text-anchor="start">${rightLabel}</text>`;
-    }
-
-    function drawArrow(x1, y1, x2, y2, mId) {
-      return `<line class="line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#${mId})"/>`;
-    }
-
-    function drawPolyline(pts, mId = null) {
-      const attr = mId ? `marker-end="url(#${mId})"` : '';
-      return `<polyline class="line" points="${pts}" fill="none" ${attr}/>`;
-    }
-
-    // ==================== 7 TA 13-MASALANING HAR BIRI UCHUN CHIZMALAR ====================
-    const PROBLEMS_13 = [
-      {
-        sec: "1-chizma • §-5.1. Butun sonli masalalar (116-bet)",
-        title: "13-masala: Maxraji N (N=7) dan katta boʻlmagan (0; 1) oraliqdagi qisqarmas kasrlar",
-        defense: "«Boshlash»dan keyin maxraj chegarasi N (masalada N=7) parallelogrammda kiritiladi. Kasr (0; 1) oraliqda yotishi uchun maxraj q = 2, N, 1 va surat p = 1, q-1, 1 sikllarda olinadi. EKUBni topishda ikkita rombdan ham chiziqlar faqat 2 yondan (chapga «Yoʻq», oʻngga «Ha») chiqadi. EKUB a = 1 boʻlganda, qisqarmas kasr p, q burchagi kesik chop etish blokida chiqariladi.",
-        render: (m) => {
-          const cx = 360;
-          let s = createSvgHeader(720, 860, m);
-          // 1. Boshlash
-          s += drawOval(cx, 15, 150, 38, "Boshlash");
-          s += drawArrow(cx, 53, cx, 76, m);
-          // 2. Kiritish (Parallelogramm): N
-          s += drawInputParallelogram(cx, 80, 150, 38, "N");
-          s += drawArrow(cx, 118, cx, 142, m);
-          // 3. Sikl 1: q = 2, N, 1
-          s += drawHexagon(cx, 146, 200, 38, "q = 2, N, 1");
-          s += drawArrow(cx, 184, cx, 208, m);
-          // 4. Sikl 2: p = 1, q-1, 1
-          s += drawHexagon(cx, 212, 200, 38, "p = 1, q-1, 1");
-          s += drawArrow(cx, 250, cx, 274, m);
-          // 5. a := p; b := q
-          s += drawRect(cx, 278, 170, 38, "a := p;  b := q");
-          s += drawArrow(cx, 316, cx, 344, m);
-
-          // 6. Romb 1: a ≠ b (Faqat 2 yondan!)
-          s += drawDiamond(cx, 348, 150, 56, "a ≠ b", "Yoʻq", "Ha");
-          // Romb 1 O'NG ("Ha" -> Evklid ayirish: Romb 2: a > b)
-          s += drawPolyline(`${cx + 75},376 520,376 520,406`, m);
-          s += drawDiamond(520, 410, 130, 52, "a > b", "Yoʻq", "Ha");
-          // Romb 2 Chap ("Yo'q": b := b - a) va O'ng ("Ha": a := a - b)
-          s += drawPolyline(`455,436 425,436 425,476`, m);
-          s += drawRect(425, 480, 105, 36, "b := b - a");
-          s += drawPolyline(`585,436 615,436 615,476`, m);
-          s += drawRect(615, 480, 105, 36, "a := a - b");
-          // Romb 2 birlashib -> Romb 1 tepasiga (cx, 332) qaytadi
-          s += drawPolyline(`425,516 425,536 615,536 615,516`);
-          s += drawPolyline(`520,536 685,536 685,332 ${cx},332`, m);
-
-          // Romb 1 CHAP ("Yo'q" -> a = b bo'ldi, endi Romb 3: a = 1)
-          s += drawPolyline(`${cx - 75},376 210,376 210,556`, m);
-          s += drawDiamond(210, 560, 140, 54, "a = 1", "Yoʻq", "Ha");
-          // Romb 3 O'ng ("Ha" -> Chop etish: p, q [Kesik burchakli!])
-          s += drawPolyline(`280,587 330,587 330,626`, m);
-          s += drawPrintBlock(330, 630, 120, 40, "p, q");
-          s += drawPolyline(`330,670 330,695 210,695`);
-          // Romb 3 Chap ("Yo'q" -> bo'sh aylanib o'tish)
-          s += drawPolyline(`140,587 105,587 105,695 210,695`);
-
-          // p sikliga chapdan qaytish
-          s += drawPolyline(`210,695 75,695 75,231 ${cx - 104},231`, m);
-          // p sikli o'ngdan chiqib -> q sikliga chapdan qaytadi
-          s += drawPolyline(`${cx + 100},231 490,231 490,725 48,725 48,165 ${cx - 104},165`, m);
-          // q sikli o'ngdan chiqib -> Tamom blokiga boradi
-          s += drawPolyline(`${cx + 100},165 702,165 702,760 ${cx},760 ${cx},786`, m);
-          s += drawOval(cx, 790, 150, 38, "Tamom");
-          s += `</svg>`;
-          return s;
-        }
-      },
-      {
-        sec: "2-chizma • §-5.2. Sanoq sistemalari (119-bet)",
-        title: "13-masala: n ga boʻlinadigan hamda faqat 0 va 7 raqamlaridan iborat natural son",
-        defense: "«Boshlash»dan keyin parallelogrammda n soni kiritiladi. Ikkala rombda ham chiziqlar faqat ikki yondan (chapga «Yoʻq», oʻngga «Ha») chiqarilgan: t > 0 rombining oʻng («Ha») tarmogʻida sonning ikkilik raqamlari 7 ga koʻpaytirilib S hosil qilinadi, chap («Yoʻq») tarmogʻi esa S ning n ga boʻlinishini tekshiruvchi rombga olib boradi. Shart bajarilganda S burchagi kesik chop etish blokida chiqariladi.",
-        render: (m) => {
-          const cx = 360;
-          let s = createSvgHeader(720, 800, m);
-          s += drawOval(cx, 15, 150, 38, "Boshlash");
-          s += drawArrow(cx, 53, cx, 78, m);
-          // Kiritish: n
-          s += drawInputParallelogram(cx, 82, 150, 38, "n");
-          s += drawArrow(cx, 120, cx, 146, m);
-          // k := 1
-          s += drawRect(cx, 150, 140, 36, "k := 1");
-          s += drawArrow(cx, 186, cx, 218, m);
-          // t := k; S := 0; p := 1
-          s += drawRect(cx, 222, 230, 40, "t := k;  S := 0;  p := 1");
-          s += drawArrow(cx, 262, cx, 298, m);
-
-          // Romb 1: t > 0 (Faqat 2 yondan!)
-          s += drawDiamond(cx, 302, 150, 56, "t > 0", "Yoʻq", "Ha");
-          // O'ng ("Ha") -> qoldiq va S ni hisoblash va tepaga qaytish
-          s += drawPolyline(`${cx + 75},330 555,330 555,362`, m);
-          s += drawRect(555, 366, 200, 74, [
-            "q := t - [t/2]·2",
-            "S := S + 7·q·p",
-            "p := p·10;  t := [t/2]"
-          ]);
-          s += drawPolyline(`555,440 555,462 680,462 680,280 ${cx},280`, m);
-
-          // Chap ("Yo'q") -> pastga tushib markazga qaytadi va Romb 2 ga kiradi
-          s += drawPolyline(`${cx - 75},330 200,330 200,480 ${cx},480 ${cx},506`, m);
-
-          // Romb 2: S - [S/n]*n = 0 (Faqat 2 yondan!)
-          s += drawDiamond(cx, 510, 220, 62, "S - [S/n]·n = 0", "Yoʻq", "Ha");
-          // Chap ("Yo'q") -> k := k + 1 va 204-koordinataga qaytish
-          s += drawPolyline(`${cx - 110},541 135,541 135,576`, m);
-          s += drawRect(135, 580, 120, 38, "k := k + 1");
-          s += drawPolyline(`135,618 135,640 55,640 55,204 ${cx},204`, m);
-
-          // O'ng ("Ha") -> markazga kelib Chop etish (S) va Tamom
-          s += drawPolyline(`${cx + 110},541 530,541 530,636 ${cx},636 ${cx},662`, m);
-          s += drawPrintBlock(cx, 666, 150, 40, "S");
-          s += drawArrow(cx, 706, cx, 732, m);
-          s += drawOval(cx, 736, 150, 38, "Tamom");
-          s += `</svg>`;
-          return s;
-        }
-      },
-      {
-        sec: "3-chizma • §-5.3. Geometriya (123-bet)",
-        title: "13-masala: Bitta nuqtada kesishadigan 3 ta toʻgʻri chiziq mavjudligi",
-        defense: "«Boshlash»dan keyin parallelogrammda n va toʻgʻri chiziqlarning koeffitsiyentlari kiritiladi. Uchta ichma-ich siklda D va Δ determinantlar topiladi. Har ikkala rombda ham chiziqlar faqat chap («Yoʻq») va oʻng («Ha») uchlardan chiqadi. Sikllar tugagach, k = 1 rombining chap uchidan «Yoʻq», oʻng uchidan «Bor» javobi burchagi kesik chop etish bloklariga boradi.",
-        render: (m) => {
-          const cx = 360;
-          let s = createSvgHeader(740, 900, m);
-          s += drawOval(cx, 15, 150, 36, "Boshlash");
-          s += drawArrow(cx, 51, cx, 74, m);
-          // Kiritish
-          s += drawInputParallelogram(cx, 78, 300, 38, "n, a[1..n], b[1..n], c[1..n]");
-          s += drawArrow(cx, 116, cx, 140, m);
-          // k := 0
-          s += drawRect(cx, 144, 140, 34, "k := 0");
-          s += drawArrow(cx, 178, cx, 200, m);
-          // 3 ta sikl
-          s += drawHexagon(cx, 204, 210, 36, "i = 1, n-2, 1");
-          s += drawArrow(cx, 240, cx, 262, m);
-          s += drawHexagon(cx, 266, 210, 36, "j = i+1, n-1, 1");
-          s += drawArrow(cx, 302, cx, 324, m);
-          s += drawHexagon(cx, 328, 210, 36, "m = j+1, n, 1");
-          s += drawArrow(cx, 364, cx, 388, m);
-          // Hisoblash
-          s += drawRect(cx, 392, 410, 58, [
-            "D := a[i]b[j] - a[j]b[i]",
-            "Δ := a[i](b[j]c[m]-b[m]c[j]) - b[i](a[j]c[m]-a[m]c[j]) + c[i]D"
-          ]);
-          s += drawArrow(cx, 450, cx, 476, m);
-
-          // Romb 1: D ≠ 0 va Δ = 0 (Faqat 2 yondan!)
-          s += drawDiamond(cx, 480, 230, 58, "D ≠ 0  va  Δ = 0", "Yoʻq", "Ha");
-          // O'ng ("Ha") -> k := 1
-          s += drawPolyline(`${cx + 115},509 575,509 575,542`, m);
-          s += drawRect(575, 546, 115, 36, "k := 1");
-          s += drawPolyline(`575,582 575,606 ${cx},606`);
-          // Chap ("Yo'q") -> bo'sh aylanib tushish
-          s += drawPolyline(`${cx - 115},509 195,509 195,606 ${cx},606`);
-
-          // 3 ta siklni chapdan qaytarish
-          s += drawPolyline(`${cx},606 125,606 125,346 ${cx - 109},346`, m);
-          s += drawPolyline(`${cx + 105},346 510,346 510,314 92,314 92,284 ${cx - 109},284`, m);
-          s += drawPolyline(`${cx + 105},284 535,284 535,252 60,252 60,222 ${cx - 109},222`, m);
-
-          // Tashqi i sikli o'ngdan chiqib -> Romb 2 (k = 1) ga boradi
-          s += drawPolyline(`${cx + 105},222 695,222 695,640 ${cx},640 ${cx},666`, m);
-
-          // Romb 2: k = 1 (Faqat 2 yondan!)
-          s += drawDiamond(cx, 670, 160, 56, "k = 1", "Yoʻq", "Ha");
-          // Chap ("Yo'q") -> Chop etish: "Yo'q"
-          s += drawPolyline(`${cx - 80},698 205,698 205,738`, m);
-          s += drawPrintBlock(205, 742, 130, 40, '"Yoʻq"');
-          // O'ng ("Ha") -> Chop etish: "Bor"
-          s += drawPolyline(`${cx + 80},698 515,698 515,738`, m);
-          s += drawPrintBlock(515, 742, 130, 40, '"Bor"');
-
-          // Birlashtirib Tamomga
-          s += drawPolyline(`205,782 205,808 515,808 515,782`);
-          s += drawArrow(cx, 808, cx, 834, m);
-          s += drawOval(cx, 838, 150, 36, "Tamom");
-          s += `</svg>`;
-          return s;
-        }
-      },
-      {
-        sec: "4-chizma • §-5.4. Massivlarni tartiblash (126-bet)",
-        title: "13-masala: Ikkita tartiblangan massivni birlashtirish (Taqqoslashlar ≤ p+q)",
-        defense: "«Boshlash»dan keyin parallelogrammda p, q va c, d massivlar kiritiladi. Sikl ichidagi barcha 3 ta rombda ham chiziqlar faqat 2 yondan (chapdan «Yoʻq», oʻngdan «Ha») chiqadi, pastki uchlari esa boʻsh. Sikl yakunlanganda oʻng uchidan chiqib, natijaviy f[1..p+q] massiv burchagi kesik chop etish blokida chiqariladi.",
-        render: (m) => {
-          const cx = 360;
-          let s = createSvgHeader(740, 820, m);
-          s += drawOval(cx, 15, 150, 36, "Boshlash");
-          s += drawArrow(cx, 51, cx, 74, m);
-          // Kiritish
-          s += drawInputParallelogram(cx, 78, 280, 38, "p, q, c[1..p], d[1..q]");
-          s += drawArrow(cx, 116, cx, 140, m);
-          // i := 1; j := 1
-          s += drawRect(cx, 144, 170, 36, "i := 1;  j := 1");
-          s += drawArrow(cx, 180, cx, 204, m);
-          // Sikl: k = 1, p+q, 1
-          s += drawHexagon(cx, 208, 210, 38, "k = 1, p+q, 1");
-          s += drawArrow(cx, 246, cx, 274, m);
-
-          // Romb 1: i ≤ p (Faqat 2 yondan!)
-          s += drawDiamond(cx, 278, 150, 54, "i ≤ p", "Yoʻq", "Ha");
-
-          // Romb 1 O'NG ("Ha") -> Romb 2: j ≤ q (x = 490)
-          s += drawPolyline(`${cx + 75},305 490,305 490,338`, m);
-          s += drawDiamond(490, 342, 140, 52, "j ≤ q", "Yoʻq", "Ha");
-
-          // Romb 2 O'NG ("Ha") -> Romb 3: c[i] ≤ d[j] (x = 580)
-          s += drawPolyline(`560,368 580,368 580,418`, m);
-          s += drawDiamond(580, 422, 160, 56, "c[i] ≤ d[j]", "Yoʻq", "Ha");
-
-          // c[i]ni olish holatlari: Romb 2 CHAP ("Yo'q") va Romb 3 O'NG ("Ha") -> x = 580 da f[k]:=c[i]
-          s += drawPolyline(`660,450 680,450 680,515 580,515 580,540`, m);
-          s += drawPolyline(`420,368 395,368 395,515 580,515`);
-          s += drawRect(580, 544, 155, 44, ["f[k] := c[i]", "i := i + 1"]);
-
-          // d[j]ni olish holatlari: Romb 1 CHAP ("Yo'q") va Romb 3 CHAP ("Yo'q") -> x = 210 da f[k]:=d[j]
-          s += drawPolyline(`${cx - 75},305 210,305 210,540`, m);
-          s += drawPolyline(`500,450 470,450 470,500 210,500`);
-          s += drawRect(210, 544, 155, 44, ["f[k] := d[j]", "j := j + 1"]);
-
-          // Ikkala tarmoq birlashib -> k sikliga chapdan qaytadi
-          s += drawPolyline(`210,588 210,625 580,625 580,588`);
-          s += drawPolyline(`210,625 65,625 65,227 ${cx - 109},227`, m);
-
-          // Sikldan o'ngdan chiqish -> Chop etish (f[1..p+q]) va Tamom
-          s += drawPolyline(`${cx + 105},227 708,227 708,665 ${cx},665 ${cx},692`, m);
-          s += drawPrintBlock(cx, 696, 190, 40, "f[1..p+q]");
-          s += drawArrow(cx, 736, cx, 762, m);
-          s += drawOval(cx, 766, 150, 36, "Tamom");
-          s += `</svg>`;
-          return s;
-        }
-      },
-      {
-        sec: "5-chizma • §-5.5. Koʻphadlar bilan ishlash (129-bet)",
-        title: "13-masala: G_k(x) koʻphadlari koeffitsiyentlari va yigʻindisi",
-        defense: "«Boshlash»dan keyin parallelogrammda a haqiqiy soni va d[0..6] koeffitsiyentlar kiritiladi. k = 2, 6, 1 va j = 1, k, 1 ichma-ich sikllarda G[k, j] koeffitsiyentlar matritsasi, P[j] yigʻindi koʻphad va S qiymat hisoblanadi. Yakunda barcha natijalar burchagi kesik chop etish blokida chiqariladi.",
-        render: (m) => {
-          const cx = 360;
-          let s = createSvgHeader(720, 760, m);
-          s += drawOval(cx, 15, 150, 38, "Boshlash");
-          s += drawArrow(cx, 53, cx, 78, m);
-          // Kiritish
-          s += drawInputParallelogram(cx, 82, 220, 38, "a, d[0..6]");
-          s += drawArrow(cx, 120, cx, 146, m);
-          // Boshlang'ich qiymatlar
-          s += drawRect(cx, 150, 380, 58, [
-            "G[0,0] := 1;  G[1,0] := -1;  G[1,1] := 1",
-            "v[0] := 1;  v[1] := a - 1;  S := v[0] + v[1]"
-          ]);
-          s += drawArrow(cx, 208, cx, 236, m);
-          // Sikl 1: k = 2, 6, 1
-          s += drawHexagon(cx, 240, 200, 38, "k = 2, 6, 1");
-          s += drawArrow(cx, 278, cx, 306, m);
-          // Ozod had
-          s += drawRect(cx, 310, 410, 58, [
-            "G[k,0] := -(2k-1)G[k-1,0] - (k-1)²G[k-2,0]",
-            "v[k] := (a-2k+1)v[k-1] - (k-1)²v[k-2];  S := S + v[k]"
-          ]);
-          s += drawArrow(cx, 368, cx, 396, m);
-          // Sikl 2: j = 1, k, 1
-          s += drawHexagon(cx, 400, 200, 38, "j = 1, k, 1");
-          s += drawArrow(cx, 438, cx, 466, m);
-          // G[k,j]
-          s += drawRect(cx, 470, 410, 56, [
-            "G[k,j] := G[k-1,j-1] - (2k-1)G[k-1,j] - (k-1)²G[k-2,j]",
-            "P[j] := d[0]G[0,j] + ... + d[k]G[k,j]"
-          ]);
-          // j sikliga chapdan qaytish
-          s += drawPolyline(`${cx},526 ${cx},552 115,552 115,419 ${cx - 104},419`, m);
-          // j sikl o'ngdan chiqib -> k siklga chapdan qaytadi
-          s += drawPolyline(`${cx + 100},419 595,419 595,576 75,576 75,259 ${cx - 104},259`, m);
-          // k sikl o'ngdan chiqib -> Chop etish (Kesik burchak!) va Tamom
-          s += drawPolyline(`${cx + 100},259 655,259 655,606 ${cx},606 ${cx},632`, m);
-          s += drawPrintBlock(cx, 636, 310, 42, "G[3], G[5], G[6], P[0..6], S");
-          s += drawArrow(cx, 678, cx, 704, m);
-          s += drawOval(cx, 708, 150, 38, "Tamom");
-          s += `</svg>`;
-          return s;
-        }
-      },
-      {
-        sec: "6-chizma • §-5.6. Matrisalarni tuzish va almashtirish (131-bet)",
-        title: "13-masala: Eng katta element turgan satr va ustunni oʻchirish",
-        defense: "«Boshlash»dan keyin parallelogrammda n va A matrisa kiritiladi. Chizmadagi barcha 3 ta rombda (A[i,j] > max, i ≥ r, j ≥ c) chiziqlar faqat 2 yondan — chapdan («Yoʻq») va oʻngdan («Ha») chiqadi, pastki uchlari esa boʻsh! Yakunda max va yangi B[1..n-1, 1..n-1] matrisa burchagi kesik chop etish blokida chiqariladi.",
-        render: (m) => {
-          const cx = 360;
-          let s = createSvgHeader(740, 940, m);
-          s += drawOval(cx, 15, 150, 34, "Boshlash");
-          s += drawArrow(cx, 49, cx, 70, m);
-          // Kiritish
-          s += drawInputParallelogram(cx, 74, 240, 36, "n, A[1..n, 1..n]");
-          s += drawArrow(cx, 110, cx, 132, m);
-          // max := A[1,1]
-          s += drawRect(cx, 136, 260, 36, "max := A[1,1];  r := 1;  c := 1");
-          s += drawArrow(cx, 172, cx, 194, m);
-          // 1-qo'shaloq sikl
-          s += drawHexagon(cx, 198, 190, 34, "i = 1, n, 1");
-          s += drawArrow(cx, 232, cx, 252, m);
-          s += drawHexagon(cx, 256, 190, 34, "j = 1, n, 1");
-          s += drawArrow(cx, 290, cx, 312, m);
-
-          // Romb 1: A[i,j] > max (Faqat 2 yondan!)
-          s += drawDiamond(cx, 316, 180, 52, "A[i,j] > max", "Yoʻq", "Ha");
-          // O'ng ("Ha") -> max := A[i,j]; r := i; c := j
-          s += drawPolyline(`${cx + 90},342 560,342 560,368`, m);
-          s += drawRect(560, 372, 165, 44, ["max := A[i,j]", "r := i;  c := j"]);
-          s += drawPolyline(`560,416 560,432 ${cx},432`);
-          // Chap ("Yo'q") -> bo'sh aylanib tushish
-          s += drawPolyline(`${cx - 90},342 210,342 210,432 ${cx},432`);
-
-          // 1-qo'shaloq siklni chapdan qaytarish
-          s += drawPolyline(`${cx},432 140,432 140,273 ${cx - 99},273`, m);
-          s += drawPolyline(`${cx + 95},273 490,273 490,242 105,242 105,215 ${cx - 99},215`, m);
-
-          // 1-sikldan o'ngdan chiqib -> 2-qo'shaloq siklga o'tish
-          s += drawPolyline(`${cx + 95},215 685,215 685,452 ${cx},452 ${cx},472`, m);
-
-          // 2-qo'shaloq sikl
-          s += drawHexagon(cx, 476, 190, 34, "i = 1, n-1, 1");
-          s += drawArrow(cx, 510, cx, 530, m);
-          s += drawHexagon(cx, 534, 190, 34, "j = 1, n-1, 1");
-          s += drawArrow(cx, 568, cx, 588, m);
-          s += drawRect(cx, 592, 180, 32, "p := i;  q := j");
-          s += drawArrow(cx, 624, cx, 644, m);
-
-          // Romb 2: i ≥ r (Faqat 2 yondan!)
-          s += drawDiamond(cx, 648, 150, 48, "i ≥ r", "Yoʻq", "Ha");
-          s += drawPolyline(`${cx + 75},672 535,672 535,692`, m);
-          s += drawRect(535, 696, 115, 32, "p := i + 1");
-          s += drawPolyline(`535,728 535,740 ${cx},740`);
-          s += drawPolyline(`${cx - 75},672 225,672 225,740 ${cx},740`);
-          s += drawArrow(cx, 740, cx, 758, m);
-
-          // Romb 3: j ≥ c (Faqat 2 yondan!)
-          s += drawDiamond(cx, 762, 150, 48, "j ≥ c", "Yoʻq", "Ha");
-          s += drawPolyline(`${cx + 75},786 535,786 535,806`, m);
-          s += drawRect(535, 810, 115, 32, "q := j + 1");
-          s += drawPolyline(`535,842 535,854 ${cx},854`);
-          s += drawPolyline(`${cx - 75},786 225,786 225,854 ${cx},854`);
-          s += drawArrow(cx, 854, cx, 872, m);
-
-          // B[i,j] := A[p,q]
-          s += drawRect(cx, 876, 190, 34, "B[i,j] := A[p,q]");
-          // 2-qo'shaloq siklni chapdan qaytarish
-          s += drawPolyline(`${cx - 95},893 140,893 140,551 ${cx - 99},551`, m);
-          s += drawPolyline(`${cx + 95},551 490,551 490,520 105,520 105,493 ${cx - 99},493`, m);
-
-          // O'ngdan chiqib -> Chop etish (Kesik burchak!) va Tamom
-          s += drawPolyline(`${cx + 95},493 695,493 695,922 575,922`, m);
-          s += drawPrintBlock(475, 902, 195, 36, "max, B[1..n-1,1..n-1]");
-          s += drawArrow(377, 920, 325, 920, m);
-          s += drawOval(245, 902, 145, 36, "Tamom");
-          s += `</svg>`;
-          return s;
-        }
-      },
-      {
-        sec: "7-chizma • §-5.7. Matrisalar algebrasi (135-bet)",
-        title: "13-masala: n-tartibli (n=5) A kvadrat matrisaning p-darajasini (p=15, A¹⁵) hisoblash",
-        defense: "«Boshlash»dan keyin parallelogrammda matrisa oʻlchami n=5, daraja p=15 va A[1..n, 1..n] matrisa kiritiladi. Toʻrtta ichma-ich oltiburchakli sikl yordamida matrisa oʻz-oʻziga koʻpaytiriladi (har bir sikl chap uchidan qaytib, oʻng uchidan chiqadi). Natijaviy R[1..n, 1..n] matrisa burchagi kesik chop etish blokida chiqariladi.",
-        render: (m) => {
-          const cx = 360;
-          let s = createSvgHeader(740, 840, m);
-          s += drawOval(cx, 15, 150, 36, "Boshlash");
-          s += drawArrow(cx, 51, cx, 76, m);
-          // Kiritish: n, p, A[1..n, 1..n]
-          s += drawInputParallelogram(cx, 80, 260, 38, "n, p, A[1..n, 1..n]");
-          s += drawArrow(cx, 118, cx, 144, m);
-          // R := A
-          s += drawRect(cx, 148, 180, 36, "R := A");
-          s += drawArrow(cx, 184, cx, 210, m);
-          // 4 ta sikl
-          s += drawHexagon(cx, 214, 200, 38, "m = 2, p, 1");
-          s += drawArrow(cx, 252, cx, 278, m);
-          s += drawHexagon(cx, 282, 200, 38, "i = 1, n, 1");
-          s += drawArrow(cx, 320, cx, 346, m);
-          s += drawHexagon(cx, 350, 200, 38, "j = 1, n, 1");
-          s += drawArrow(cx, 388, cx, 414, m);
-          // C[i,j] := 0
-          s += drawRect(cx, 418, 160, 36, "C[i,j] := 0");
-          s += drawArrow(cx, 454, cx, 480, m);
-          // Sikl 4: k = 1, n, 1
-          s += drawHexagon(cx, 484, 200, 38, "k = 1, n, 1");
-          s += drawArrow(cx, 522, cx, 548, m);
-          // Ko'paytirish
-          s += drawRect(cx, 552, 290, 40, "C[i,j] := C[i,j] + R[i,k]·A[k,j]");
-          // Sikllarni chapdan qaytarish
-          s += drawPolyline(`${cx},592 ${cx},616 160,616 160,503 ${cx - 104},503`, m);
-          s += drawPolyline(`${cx + 100},503 550,503 550,636 125,636 125,369 ${cx - 104},369`, m);
-          s += drawPolyline(`${cx + 100},369 580,369 580,656 90,656 90,301 ${cx - 104},301`, m);
-          // i sikldan o'ngdan chiqib -> R := C
-          s += drawPolyline(`${cx + 100},301 615,301 615,680 ${cx},680 ${cx},702`, m);
-          s += drawRect(cx, 706, 180, 36, "R := C");
-          // m siklga chapdan qaytish
-          s += drawPolyline(`${cx - 90},724 55,724 55,233 ${cx - 104},233`, m);
-          // m sikldan o'ngdan chiqib -> Chop etish (Kesik burchak!) va Tamom
-          s += drawPolyline(`${cx + 100},233 685,233 685,785 555,785`, m);
-          s += drawPrintBlock(465, 765, 175, 38, "R[1..n, 1..n]");
-          s += drawArrow(377, 784, 320, 784, m);
-          s += drawOval(240, 765, 145, 38, "Tamom");
-          s += `</svg>`;
-          return s;
-        }
-      }
-    ];
-
-    function renderAllCards() {
-      const container = document.getElementById('cardsContainer');
-      container.innerHTML = PROBLEMS_13.map((p, idx) => `
-        <article class="flowchart-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden ${idx < 6 ? 'print-break' : ''}" data-index="${idx}">
-          <div class="bg-slate-900 text-white px-5 py-3 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">${p.sec}</span>
-              <h2 class="text-base md:text-lg font-bold">${p.title}</h2>
-            </div>
-            <div class="flex items-center gap-2 no-print">
-              <button onclick="downloadCurrentSvg('card-svg-${idx}', 'masala_13_${idx+1}.png')" class="px-2.5 py-1 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
-                📥 PNG yuklash
-              </button>
-              <span class="text-xs bg-slate-800 text-slate-200 px-2.5 py-1 rounded border border-slate-700">GOST 19.701-90</span>
-            </div>
-          </div>
-
-          <div class="p-4 bg-amber-50/70 border-b border-slate-200 text-xs md:text-sm text-slate-800 space-y-1">
-            <p class="font-bold text-amber-900">🎓 Ustoz soʻrasa nima deb javob berasiz (Himoya uchun):</p>
-            <p>${p.defense}</p>
-          </div>
-
-          <div id="card-svg-${idx}" class="sheet-area ${isGridOn ? 'notebook-grid' : 'plain-bg'} p-4 md:p-6 overflow-x-auto flex justify-center">
-            ${p.render('mk' + idx)}
-          </div>
-        </article>
-      `).join('');
-    }
-
-    // ==================== REJIM TUGMALARI BOSHQARUVI ====================
-    function togglePrintShape() {
-      useCutCornerPrint = !useCutCornerPrint;
-      document.getElementById('printShapeText').textContent = useCutCornerPrint
-        ? 'Chop etish: Burchagi kesik'
-        : 'Chop etish: Toʻlqinsimon hujjat';
-      renderAllCards();
-      if (lastAiNodes) renderDynamicAiSvg(lastAiNodes);
-    }
-
-    function togglePenMode() {
-      isPenMode = !isPenMode;
-      const body = document.getElementById('appBody');
-      const btnText = document.getElementById('penBtnText');
-      if (isPenMode) {
-        body.classList.add('pen-mode');
-        body.classList.remove('gost-mode');
-        btnText.textContent = 'Koʻk ruchka (Qoʻlyozma)';
-      } else {
-        body.classList.remove('pen-mode');
-        body.classList.add('gost-mode');
-        btnText.textContent = 'Kitobiy (Qora chizma)';
-      }
-    }
-
-    function toggleGrid() {
-      isGridOn = !isGridOn;
-      const sheets = document.querySelectorAll('.sheet-area');
-      const btnText = document.getElementById('gridBtnText');
-      sheets.forEach(s => {
-        if (isGridOn) {
-          s.classList.add('notebook-grid');
-          s.classList.remove('plain-bg');
+    try {
+        const res = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ section: sec, number: num, custom: inputEl.value })
+        });
+        const json = await res.json();
+        if (json.ok) {
+            currentProblem = json.data;
+            inputEl.value = currentProblem.desc;
+            document.getElementById("statusBadge").textContent = "✅";
+            document.getElementById("consoleOut").textContent = "Chizma tayyor! '▶️ Run' tugmasini bosing.";
+            activeNodeId = null;
+            drawNotebookFlowchart();
         } else {
-          s.classList.remove('notebook-grid');
-          s.classList.add('plain-bg');
+            document.getElementById("statusBadge").textContent = "❌";
+            document.getElementById("consoleOut").textContent = "Xatolik: " + json.error;
         }
-      });
-      btnText.textContent = isGridOn ? 'Katakli fon: Yoqilgan' : 'Katakli fon: Oʻchirilgan';
+    } catch (err) {
+        document.getElementById("statusBadge").textContent = "⚠️";
+        document.getElementById("consoleOut").textContent = "Server bilan aloqa yo'q: " + err.message;
     }
+}
 
-    function selectTab(target) {
-      const cardsContainer = document.getElementById('cardsContainer');
-      const aiSection = document.getElementById('aiGeneratorSection');
-      const cards = document.querySelectorAll('.flowchart-card');
-      const tabs = document.querySelectorAll('.tab-btn');
+// Qo'lda tahrirlanganda belgilab qo'yish
+document.getElementById("customPrompt").addEventListener("input", (e) => {
+    e.target.dataset.edited = "true";
+});
+document.getElementById("problemSelect").addEventListener("change", () => {
+    delete document.getElementById("customPrompt").dataset.edited;
+});
 
-      tabs.forEach(t => {
-        t.classList.remove('tab-active');
-      });
-
-      const activeTab = document.getElementById(target === 'all' ? 'tab-all' : (target === 'ai' ? 'tab-ai' : `tab-${target}`));
-      if (activeTab) activeTab.classList.add('tab-active');
-
-      if (target === 'ai') {
-        cardsContainer.classList.add('hidden');
-        aiSection.classList.remove('hidden');
-      } else {
-        aiSection.classList.add('hidden');
-        cardsContainer.classList.remove('hidden');
-        cards.forEach((card, idx) => {
-          card.style.display = (target === 'all' || idx === target) ? 'block' : 'none';
-        });
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+// ==========================================================
+// KATAK DAFTAR CHIZish DVIGATELI (Rough.js)
+// ==========================================================
+function countNodes(ast) {
+    let c = 0;
+    for (const n of (ast || [])) {
+        c += 1;
+        if (n.body) c += countNodes(n.body);
+        if (n.thenBody) c += countNodes(n.thenBody);
+        if (n.elseBody) c += countNodes(n.elseBody);
     }
+    return c;
+}
 
-    // ==================== AI GENERATOR (179 TA MASALA UCHUN) ====================
-    const SECTION_COUNTS = { "5.1": 32, "5.2": 32, "5.3": 30, "5.4": 26, "5.5": 16, "5.6": 29, "5.7": 21 };
-    const PRESET_TEXTS = {
-      "5.1_1": "n natural soni berilgan boʻlsin. Har biri n sonidan katta boʻlmagan va a²+b²=c² (a≤b≤c≤n) shartni qanoatlantiruvchi Pifagor sonlarining barcha uchliklarini aniqlang.",
-      "5.1_7": "Ikki natural son doʻst deyiladi, agar ularning har biri ikkinchisining oʻzidan tashqari barcha boʻluvchilari yigʻindisiga teng boʻlsa. [200, 300] oraliqdagi barcha doʻst sonlarni aniqlang.",
-      "5.1_13": "Maxraji 7 dan katta boʻlmagan va qiymati 0 va 1 orasida boʻlgan barcha oʻzaro qisqarmaydigan kasrlarni toping.",
-      "5.2_6": "p natural soni berilgan boʻlsin. Shu sonni ikkilik sanoq sistemasida ifodalash uchun kerak boʻladigan barcha raqamlar ketma-ketligini aniqlang.",
-      "5.2_13": "n natural soni berilgan boʻlsin. n ga boʻlinadigan hamda faqat 0 va 7 raqamlaridan iborat boʻlgan biror natural sonni toping.",
-      "5.3_1": "Haqiqiy musbat a, b, c, d sonlar berilgan boʻlsin. Tomonlari shu sonlarga teng boʻlgan toʻrtburchak yasash mumkinmi?",
-      "5.4_1": "A1, A2, ..., An haqiqiy sonlar ketma-ketligini minimal elementlar usuli bilan oʻsish tartibida tartiblang.",
-      "5.5_3": "n darajali P(x) koʻphad berilgan boʻlsin. Uning hosilasi boʻlgan P'(x) hamda P'(1), P'(2) larni toping.",
-      "5.6_3": "a1, ..., a10 butun sonli matrisa berilgan boʻlsin. Bu matrisada oʻzi bilan indeksining yigʻindisi juft boʻlgan elementlarni nol bilan almashtiring.",
-      "5.7_2": "n tartibli A kvadrat matrisa berilgan. A² ni hisoblang."
-    };
+function drawNotebookFlowchart() {
+    if (!currentProblem) return;
+    const canvas = document.getElementById("flowCanvas");
+    const ctx = canvas.getContext("2d");
+    const rc = rough.canvas(canvas);
 
-    let lastAiNodes = null;
+    canvas.height = Math.max(950, countNodes(currentProblem.ast) * 115 + 240);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    function updateProblemSelect() {
-      const sec = document.getElementById('secSelect').value;
-      const probSel = document.getElementById('probSelect');
-      const count = SECTION_COUNTS[sec] || 20;
-      probSel.innerHTML = '';
-      for (let i = 1; i <= count; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = `${i}-masala (§-${sec})`;
-        probSel.appendChild(opt);
-      }
-      loadPresetProblem();
-    }
+    ctx.font = "bold 26px 'Caveat', cursive";
+    ctx.fillStyle = "#1a3b8b";
+    ctx.textAlign = "center";
+    ctx.fillText(currentProblem.title, canvas.width / 2, 38);
 
-    function loadPresetProblem() {
-      const sec = document.getElementById('secSelect').value;
-      const num = document.getElementById('probSelect').value;
-      const key = `${sec}_${num}`;
-      const input = document.getElementById('customProblemInput');
-      if (PRESET_TEXTS[key]) {
-        input.value = PRESET_TEXTS[key];
-      } else {
-        input.value = `V bob, §-${sec}-paragraf, ${num}-masala. (PDF kitobdan masala shartini aniqlab, GOST 19.701-90 standarti boʻyicha blok-sxema tuzilsin).`;
-      }
-    }
+    const centerX = canvas.width / 2;
+    let currentY = 60;
 
-    // Dinamik AI SVG chizuvchi (Romb FAQAT 2 yondan chiqadi!)
-    function renderDynamicAiSvg(nodes) {
-      lastAiNodes = nodes;
-      const cx = 360;
-      let y = 20;
-      let bodyHtml = '';
-      let loopStack = [];
+    drawOval(rc, ctx, centerX, currentY, 150, 42, "Boshlash", false);
+    drawArrow(rc, centerX, currentY + 42, centerX, currentY + 75);
+    currentY += 75;
 
-      nodes.forEach((node, idx) => {
-        const type = node.type;
-        const text = node.text || '';
+    currentY = renderSequence(rc, ctx, currentProblem.ast, centerX, currentY);
 
-        if (type === 'start') {
-          bodyHtml += drawOval(cx, y, 150, 38, "Boshlash");
-          bodyHtml += drawArrow(cx, y + 38, cx, y + 66, 'mAi');
-          y += 70;
-        } else if (type === 'input') {
-          bodyHtml += drawInputParallelogram(cx, y, 220, 38, text);
-          bodyHtml += drawArrow(cx, y + 38, cx, y + 66, 'mAi');
-          y += 70;
-        } else if (type === 'proc') {
-          bodyHtml += drawRect(cx, y, 240, 40, text);
-          bodyHtml += drawArrow(cx, y + 40, cx, y + 68, 'mAi');
-          y += 72;
-        } else if (type === 'loop') {
-          bodyHtml += drawHexagon(cx, y, 210, 38, text);
-          loopStack.push({ yMid: y + 19, idx });
-          bodyHtml += drawArrow(cx, y + 38, cx, y + 66, 'mAi');
-          y += 70;
-        } else if (type === 'cond') {
-          // IKKI YONLI ROMB! Pastki uchidan chiziq chiqmaydi!
-          bodyHtml += drawDiamond(cx, y, 190, 56, text, "Yoʻq", "Ha");
-          const cy = y + 28;
-          const yesAct = (node.yes || '').trim();
-          const noAct = (node.no || '').trim();
-          const branchY = y + 68;
-          const mergeY = y + 132;
+    drawOval(rc, ctx, centerX, currentY, 150, 42, "Tamom", false);
+}
 
-          // O'ng tarmoq ("Ha") -> x = 555
-          if (yesAct) {
-            bodyHtml += drawPolyline(`${cx + 95},${cy} 555,${cy} 555,${branchY - 4}`, 'mAi');
-            bodyHtml += drawRect(555, branchY, 175, 40, yesAct);
-            bodyHtml += drawPolyline(`555,${branchY + 40} 555,${mergeY} ${cx},${mergeY}`);
-          } else {
-            bodyHtml += drawPolyline(`${cx + 95},${cy} 555,${cy} 555,${mergeY} ${cx},${mergeY}`);
-          }
+function renderSequence(rc, ctx, nodes, x, startY) {
+    let y = startY;
+    for (const node of (nodes || [])) {
+        const isActive = (node.id === activeNodeId);
 
-          // Chap tarmoq ("Yo'q") -> x = 165
-          if (noAct) {
-            bodyHtml += drawPolyline(`${cx - 95},${cy} 165,${cy} 165,${branchY - 4}`, 'mAi');
-            bodyHtml += drawRect(165, branchY, 175, 40, noAct);
-            bodyHtml += drawPolyline(`165,${branchY + 40} 165,${mergeY} ${cx},${mergeY}`);
-          } else {
-            bodyHtml += drawPolyline(`${cx - 95},${cy} 165,${cy} 165,${mergeY} ${cx},${mergeY}`);
-          }
+        if (node.type === "declare" || node.type === "assign") {
+            drawRect(rc, ctx, x, y, 230, 46, node.text, isActive, node.type === "declare");
+            drawArrow(rc, x, y + 46, x, y + 80);
+            y += 80;
+        } else if (node.type === "input" || node.type === "output") {
+            drawParallelogram(rc, ctx, x, y, 230, 46, node.text, isActive);
+            drawArrow(rc, x, y + 46, x, y + 80);
+            y += 80;
+        } else if (node.type === "for") {
+            drawHexagon(rc, ctx, x, y, 240, 50, node.text, isActive);
+            drawArrow(rc, x, y + 50, x, y + 84);
+            const bodyEndY = renderSequence(rc, ctx, node.body, x, y + 84);
 
-          bodyHtml += drawArrow(cx, mergeY, cx, mergeY + 26, 'mAi');
-          y = mergeY + 30;
-        } else if (type === 'print') {
-          // Agar ochiq sikllar bo'lsa, chop etishdan oldin ularni chapdan qaytarib, o'ngdan chiqaramiz
-          while (loopStack.length > 0) {
-            const lp = loopStack.pop();
-            const leftX = 65 + loopStack.length * 22;
-            const rightX = 670 - loopStack.length * 20;
-            bodyHtml += drawPolyline(`${cx},${y - 12} ${leftX},${y - 12} ${leftX},${lp.yMid} ${cx - 109},${lp.yMid}`, 'mAi');
-            bodyHtml += drawPolyline(`${cx + 105},${lp.yMid} ${rightX},${lp.yMid} ${rightX},${y + 8} ${cx},${y + 8} ${cx},${y + 26}`, 'mAi');
-            y += 30;
-          }
-          bodyHtml += drawPrintBlock(cx, y, 210, 40, text);
-          bodyHtml += drawArrow(cx, y + 40, cx, y + 66, 'mAi');
-          y += 70;
-        } else if (type === 'end') {
-          bodyHtml += drawOval(cx, y, 150, 38, "Tamom");
-          y += 60;
+            const leftLoopX = x - 185;
+            rc.linearPath([[x, bodyEndY - 18], [leftLoopX, bodyEndY - 18], [leftLoopX, y + 25], [x - 120, y + 25]], { stroke: "#1a3b8b", strokeWidth: 2 });
+
+            const rightExitX = x + 185;
+            rc.linearPath([[x + 120, y + 25], [rightExitX, y + 25], [rightExitX, bodyEndY + 10], [x, bodyEndY + 10]], { stroke: "#c92a2a", strokeWidth: 1.8 });
+
+            drawArrow(rc, x, bodyEndY + 10, x, bodyEndY + 40);
+            y = bodyEndY + 40;
+        } else if (node.type === "while") {
+            drawDiamond(rc, ctx, x, y, 230, 68, node.text, isActive);
+            drawText(ctx, "Ha", x + 18, y + 82, "#2b8a3e");
+            drawArrow(rc, x, y + 68, x, y + 100);
+
+            const bodyEndY = renderSequence(rc, ctx, node.body, x, y + 100);
+
+            const leftLoopX = x - 185;
+            rc.linearPath([[x, bodyEndY - 18], [leftLoopX, bodyEndY - 18], [leftLoopX, y + 34], [x - 115, y + 34]], { stroke: "#1a3b8b", strokeWidth: 2 });
+
+            drawText(ctx, "Yo'q", x + 135, y + 26, "#c92a2a");
+            const rightExitX = x + 185;
+            rc.linearPath([[x + 115, y + 34], [rightExitX, y + 34], [rightExitX, bodyEndY + 12], [x, bodyEndY + 12]], { stroke: "#c92a2a", strokeWidth: 1.8 });
+
+            drawArrow(rc, x, bodyEndY + 12, x, bodyEndY + 42);
+            y = bodyEndY + 42;
+        } else if (node.type === "if") {
+            drawDiamond(rc, ctx, x, y, 230, 68, node.text, isActive);
+            const branchY = y + 95;
+            const leftX = x - 170;
+            const rightX = x + 170;
+
+            drawText(ctx, "Ha", x - 135, y + 26, "#2b8a3e");
+            rc.linearPath([[x - 115, y + 34], [leftX, y + 34], [leftX, branchY]], { stroke: "#1a3b8b", strokeWidth: 2 });
+            const leftEndY = renderSequence(rc, ctx, node.thenBody, leftX, branchY);
+
+            drawText(ctx, "Yo'q", x + 135, y + 26, "#c92a2a");
+            rc.linearPath([[x + 115, y + 34], [rightX, y + 34], [rightX, branchY]], { stroke: "#1a3b8b", strokeWidth: 2 });
+            const rightEndY = (node.elseBody && node.elseBody.length > 0)
+                ? renderSequence(rc, ctx, node.elseBody, rightX, branchY)
+                : branchY + 30;
+
+            const mergeY = Math.max(leftEndY, rightEndY) + 15;
+            rc.linearPath([[leftX, leftEndY - 15], [leftX, mergeY], [x, mergeY]], { stroke: "#1a3b8b", strokeWidth: 2 });
+            rc.linearPath([[rightX, (node.elseBody && node.elseBody.length > 0) ? rightEndY - 15 : branchY], [rightX, mergeY], [x, mergeY]], { stroke: "#1a3b8b", strokeWidth: 2 });
+
+            drawArrow(rc, x, mergeY, x, mergeY + 35);
+            y = mergeY + 35;
         }
-      });
+    }
+    return y;
+}
 
-      const fullSvg = createSvgHeader(740, y + 20, 'mAi') + bodyHtml + `</svg>`;
-      document.getElementById('aiSvgContainer').innerHTML = fullSvg;
+function drawOval(rc, ctx, cx, y, w, h, text, active) {
+    rc.ellipse(cx, y + h/2, w, h, { stroke: "#1a3b8b", strokeWidth: 2.2, fill: active ? "#fef08a" : "rgba(255,255,255,0.8)", fillStyle: "solid" });
+    drawText(ctx, text, cx, y + h/2 + 6);
+}
+function drawRect(rc, ctx, cx, y, w, h, text, active, isDeclare) {
+    rc.rectangle(cx - w/2, y, w, h, { stroke: "#1a3b8b", strokeWidth: 2, fill: active ? "#fef08a" : "rgba(255,255,255,0.8)", fillStyle: "solid" });
+    if (isDeclare) rc.line(cx - w/2 + 12, y, cx - w/2 + 12, y + h, { stroke: "#1a3b8b" });
+    drawText(ctx, text, cx, y + h/2 + 6);
+}
+function drawParallelogram(rc, ctx, cx, y, w, h, text, active) {
+    const s = 18;
+    rc.polygon([[cx - w/2 + s, y], [cx + w/2 + s, y], [cx + w/2 - s, y + h], [cx - w/2 - s, y + h]], { stroke: "#1a3b8b", strokeWidth: 2, fill: active ? "#fef08a" : "rgba(255,255,255,0.8)", fillStyle: "solid" });
+    drawText(ctx, text, cx, y + h/2 + 6);
+}
+function drawDiamond(rc, ctx, cx, y, w, h, text, active) {
+    rc.polygon([[cx, y], [cx + w/2, y + h/2], [cx, y + h], [cx - w/2, y + h/2]], { stroke: "#1a3b8b", strokeWidth: 2, fill: active ? "#fef08a" : "rgba(255,255,255,0.8)", fillStyle: "solid" });
+    drawText(ctx, text, cx, y + h/2 + 6);
+}
+function drawHexagon(rc, ctx, cx, y, w, h, text, active) {
+    const c = 24;
+    rc.polygon([[cx - w/2 + c, y], [cx + w/2 - c, y], [cx + w/2, y + h/2], [cx + w/2 - c, y + h], [cx - w/2 + c, y + h], [cx - w/2, y + h/2]], { stroke: "#1a3b8b", strokeWidth: 2, fill: active ? "#fef08a" : "rgba(255,255,255,0.8)", fillStyle: "solid" });
+    drawText(ctx, text, cx, y + h/2 + 6);
+}
+function drawArrow(rc, x1, y1, x2, y2) {
+    rc.line(x1, y1, x2, y2, { stroke: "#1a3b8b", strokeWidth: 2 });
+    rc.linearPath([[x2 - 5, y2 - 8], [x2, y2], [x2 + 5, y2 - 8]], { stroke: "#1a3b8b", strokeWidth: 2 });
+}
+function drawText(ctx, text, x, y, color = "#1a3b8b") {
+    ctx.font = "bold 18px 'Caveat', cursive";
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.fillText(String(text).slice(0, 34), x, y);
+}
+
+// ==========================================================
+// SIMULYATOR VA EKSPORT FUNKSIYALARI
+// ==========================================================
+function runSimulation() {
+    if (!currentProblem) return;
+    if (simTimer) clearInterval(simTimer);
+    const trace = [];
+    const env = { ...(currentProblem.defaultInput || { n: 10 }) };
+    const outputs = [];
+
+    function evalInEnv(expr) {
+        try {
+            const keys = Object.keys(env);
+            const vals = Object.values(env);
+            return new Function(...keys, `return ${expr};`)(...vals);
+        } catch { return 0; }
     }
 
-    async function generateAiFlowchart() {
-      const btn = document.getElementById('generateBtn');
-      const problemText = document.getElementById('customProblemInput').value.trim();
-      if (!problemText) return;
-
-      btn.disabled = true;
-      btn.innerHTML = `<span>⏳</span> GOST 19.701-90 boʻyicha chizilmoqda...`;
-
-      const systemPrompt = `Sen Oʻzbekiston universitetlarida Informatika va algoritmlash professorisan.
-Berilgan masala uchun GOST 19.701-90 standarti boʻyicha blok-sxema qadamlarini JSON formatda qaytar.
-QATʼIY QOIDALAR:
-1. "start" ("Boshlash") blokidan keyin ALBATTA "input" (Parallelogramm) bloki boʻlsin va unda kiritiladigan oʻzgaruvchilar yozilsin (masalan: "n", "a, b, c").
-2. Natijani chiqarish uchun ALBATTA "print" blokidan foydalan (faqat oʻzgaruvchilar nomi, masalan: "S" yoki "p, q").
-3. Bloklar ichida "==", "!=", "mod", "div", "Kiritish:", "Chiqarish:" soʻzlarini ISHLATMA! Matematik "=", "≠", "≤", "≥", "[a/b]" ishlat.
-4. Sikl bloki ("loop") "i = 1, n, 1" formatida boʻlsin.
-5. Shart bloki ("cond") ikki yonli romb boʻlib, "yes" (Ha amali) va "no" (Yoʻq amali, boʻsh boʻlishi mumkin) maydonlariga ega boʻlsin.
-
-JSON format:
-{
-  "defense": "Ustoz soʻrasa aytiladigan 2-3 gaplik himoya matni (oʻzbek tilida).",
-  "nodes": [
-    {"type": "start", "text": "Boshlash"},
-    {"type": "input", "text": "n"},
-    {"type": "proc", "text": "S := 0"},
-    {"type": "loop", "text": "i = 1, n, 1"},
-    {"type": "cond", "text": "a² + b² = c²", "yes": "S := S + 1", "no": ""},
-    {"type": "print", "text": "S"},
-    {"type": "end", "text": "Tamom"}
-  ]
-}`;
-
-      const apiKey = "";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-      try {
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: problemText }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            generationConfig: { responseMimeType: "application/json" }
-          })
-        });
-        const data = await res.json();
-        const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        const parsed = JSON.parse(raw);
-        document.getElementById('aiDefenseText').textContent = parsed.defense || '';
-        renderDynamicAiSvg(parsed.nodes || []);
-      } catch (e) {
-        // Fallback namuna
-        const fallbackNodes = [
-          { type: "start", text: "Boshlash" },
-          { type: "input", text: "n" },
-          { type: "proc", text: "S := 0" },
-          { type: "loop", text: "i = 1, n, 1" },
-          { type: "cond", text: "i - [i/2]·2 = 0", yes: "S := S + i", no: "" },
-          { type: "print", text: "S" },
-          { type: "end", text: "Tamom" }
-        ];
-        document.getElementById('aiDefenseText').textContent = "«Boshlash»dan keyin parallelogrammda boshlangʻich oʻzgaruvchilar kiritiladi, rombdan chiziqlar faqat ikki yondan chiqadi va yakunda natija burchagi kesik chop etish blokida chiqariladi.";
-        renderDynamicAiSvg(fallbackNodes);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span>✨</span> Blok-sxemani daftarga chizish`;
-      }
+    function executeNodes(nodes) {
+        for (const node of (nodes || [])) {
+            if (trace.length > 120) break;
+            trace.push({ id: node.id, env: { ...env }, out: [...outputs] });
+            if (node.type === "assign" && node.var) {
+                env[node.var] = evalInEnv(node.expr);
+            } else if (node.type === "output") {
+                outputs.push(evalInEnv(node.expr));
+            } else if (node.type === "for") {
+                const s = typeof node.from === "number" ? node.from : evalInEnv(node.from);
+                const e = typeof node.to === "number" ? node.to : evalInEnv(node.to);
+                for (let v = s; v <= e && trace.length <= 120; v++) {
+                    env[node.var] = v;
+                    trace.push({ id: node.id, env: { ...env }, out: [...outputs] });
+                    executeNodes(node.body);
+                }
+            } else if (node.type === "while") {
+                let g = 0;
+                while (evalInEnv(node.cond) && g < 35) { executeNodes(node.body); g++; }
+            } else if (node.type === "if") {
+                if (evalInEnv(node.cond)) executeNodes(node.thenBody);
+                else if (node.elseBody) executeNodes(node.elseBody);
+            }
+        }
     }
 
-    // ==================== PNG RASM QILIB YUKLAB OLISH ====================
-    function downloadCurrentSvg(containerId, filename) {
-      const container = document.getElementById(containerId);
-      const svgEl = container.querySelector('svg');
-      if (!svgEl) return;
+    executeNodes(currentProblem.ast);
+    let step = 0;
+    simTimer = setInterval(() => {
+        if (step >= trace.length) {
+            clearInterval(simTimer);
+            activeNodeId = null;
+            drawNotebookFlowchart();
+            return;
+        }
+        const st = trace[step];
+        activeNodeId = st.id;
+        drawNotebookFlowchart();
+        document.getElementById("stepCounter").textContent = `Qadam: ${step + 1}/${trace.length}`;
+        const tb = document.getElementById("varTable");
+        tb.innerHTML = "";
+        for (const k in st.env) tb.innerHTML += `<tr><td class="var-name">${k}</td><td class="var-val">${st.env[k]}</td></tr>`;
+        document.getElementById("consoleOut").textContent = st.out.length ? st.out.join("\n") : "Hisoblanmoqda...";
+        step++;
+    }, 400);
+}
 
-      const serializer = new XMLSerializer();
-      const svgStr = serializer.serializeToString(svgEl);
-      const vb = svgEl.getAttribute('viewBox').split(' ').map(Number);
-      const w = vb[2], h = vb[3];
+function downloadNotebookPNG() {
+    const canvas = document.getElementById("flowCanvas");
+    const temp = document.createElement("canvas");
+    temp.width = canvas.width; temp.height = canvas.height;
+    const tCtx = temp.getContext("2d");
+    tCtx.fillStyle = "#fdfdf8"; tCtx.fillRect(0, 0, temp.width, temp.height);
+    tCtx.strokeStyle = "#d0e3f0"; tCtx.lineWidth = 1;
+    for (let x = 0; x < temp.width; x += 20) { tCtx.beginPath(); tCtx.moveTo(x, 0); tCtx.lineTo(x, temp.height); tCtx.stroke(); }
+    for (let y = 0; y < temp.height; y += 20) { tCtx.beginPath(); tCtx.moveTo(0, y); tCtx.lineTo(temp.width, y); tCtx.stroke(); }
+    tCtx.strokeStyle = "#f08080"; tCtx.lineWidth = 2;
+    tCtx.beginPath(); tCtx.moveTo(40, 0); tCtx.lineTo(40, temp.height); tCtx.stroke();
+    tCtx.drawImage(canvas, 0, 0);
+    const a = document.createElement("a");
+    a.download = `${currentProblem.title}.png`;
+    a.href = temp.toDataURL("image/png");
+    a.click();
+}
 
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-
-      // Oq fon va katakli daftar chiziqlari
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.22)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < w; x += 20) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      }
-      for (let y = 0; y < h; y += 20) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
-      // Qizil hoshiya
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.55)';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(34, 0); ctx.lineTo(34, h); ctx.stroke();
-
-      const img = new Image();
-      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, w, h);
-        URL.revokeObjectURL(url);
-        const a = document.createElement('a');
-        a.download = filename;
-        a.href = canvas.toDataURL('image/png');
-        a.click();
-      };
-      img.src = url;
+function downloadFPRG() {
+    if (!currentProblem) return;
+    function toXml(nodes) {
+        let x = "";
+        for (const n of (nodes || [])) {
+            if (n.type === "declare") x += `<declare name="n, i, s" type="Integer" array="False" size=""/>\n`;
+            else if (n.type === "input") x += `<input variable="${n.var || 'n'}"/>\n`;
+            else if (n.type === "assign") x += `<assign variable="${n.var || 's'}" expression="${n.expr || '0'}"/>\n`;
+            else if (n.type === "output") x += `<output expression="${n.text.replace('Chiqarish: ', '')}" newline="True"/>\n`;
+            else if (n.type === "for") x += `<for variable="${n.var}" start="${n.from}" end="${n.to}" direction="inc" step="1">\n${toXml(n.body)}</for>\n`;
+            else if (n.type === "while") x += `<while expression="${n.cond}">\n${toXml(n.body)}</while>\n`;
+            else if (n.type === "if") x += `<if expression="${n.cond}"><then>${toXml(n.thenBody)}</then><else>${toXml(n.elseBody)}</else></if>\n`;
+        }
+        return x;
     }
+    const xml = `<?xml version="1.0"?>\n<flowgorithm fileversion="3.0">\n<function name="Main" type="None" variable="">\n<parameters/>\n<body>\n${toXml(currentProblem.ast)}</body>\n</function>\n</flowgorithm>`;
+    const a = document.createElement("a");
+    a.download = `${currentProblem.title}.fprg`;
+    a.href = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
+    a.click();
+}
 
-    // Dastlabki ishga tushirish
-    window.onload = () => {
-      renderAllCards();
-      updateProblemSelect();
-      // AI Generator oynasiga ham dastlabki namunani chizib qo'yamiz
-      renderDynamicAiSvg([
-        { type: "start", text: "Boshlash" },
-        { type: "input", text: "n" },
-        { type: "loop", text: "c = 1, n, 1" },
-        { type: "loop", text: "b = 1, c, 1" },
-        { type: "loop", text: "a = 1, b, 1" },
-        { type: "cond", text: "a² + b² = c²", yes: "Chop: a, b, c", no: "" },
-        { type: "print", text: "a, b, c" },
-        { type: "end", text: "Tamom" }
-      ]);
-    };
-  </script>
+window.onload = initApp;
+</script>
 </body>
 </html>
